@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap      
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"      
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="template">
+
+<sql id="pagestart"> 
+      <isNotNull property="pager.pageful" >
+<!-- db2 
+   SELECT   *   FROM   
+  (Select   b.*,rownumber()   over()   AS   rn
+     from   (  -->
+  <!-- oracle --> 
+  SELECT * FROM 
+(
+select * from (
+SELECT A.*, @rownum:=@rownum+1 as RN 
+FROM (   
+     </isNotNull>  
+</sql> 
+<sql id="Criterialimit_pagesend">   
+	<isParameterPresent>
+		<iterate prepend="and" property="Criteria.criteriaWithoutValue" conjunction="and" >
+          $Criteria.criteriaWithoutValue[]$
+        </iterate>
+        
+        <iterate prepend="and" property="Criteria.criteriaWithSingleValue" conjunction="and" >
+         	 $Criteria.criteriaWithSingleValue[].condition$
+             #Criteria.criteriaWithSingleValue[].value#
+        </iterate>
+        
+ 		<iterate prepend="and" property="Criteria.criteriaWithExistsValue" conjunction="and" >
+           	 $Criteria.criteriaWithExistsValue[].condition$
+           	 ($Criteria.criteriaWithExistsValue[].value$)
+        </iterate>
+
+       <iterate prepend="and" property="Criteria.criteriaWithListValue" conjunction="and" >
+          $Criteria.criteriaWithListValue[].condition$
+          <iterate property="Criteria.criteriaWithListValue[].values" open="(" close=")" conjunction="," >
+            #Criteria.criteriaWithListValue[].values[]#
+          </iterate>
+        </iterate>
+        
+        <iterate prepend="and" property="Criteria.criteriaWithBetweenValue" conjunction="and" >
+          $Criteria.criteriaWithBetweenValue[].condition$
+          #Criteria.criteriaWithBetweenValue[].values[0]# and
+          #Criteria.criteriaWithBetweenValue[].values[1]#
+        </iterate>
+        
+ 	 </isParameterPresent>
+     <isNotNull property="pager.sort" >
+   		order by $pager.sort$ $pager.dir$
+     </isNotNull>
+       <isNotNull property="pager.pageful" >
+<!-- db2 
+  )  b)
+    AS   a1   WHERE   a1.rn   BETWEEN  $pager.pagestart$   AND  $pager.pageend$   
+      </isNotNull> -->
+<!-- oracle  -->
+) A , (select @rownum:=0) t ) C
+WHERE RN &lt;= $pager.pageend$
+) B
+WHERE RN &gt;= $pager.pagestart$
+
+<!-- mysql 
+ limit $pager.pagestart$,$pager.pagesize$  -->
+     </isNotNull>
+ 
+</sql> 
+
+<sql id="Criterialimit">
+  <isParameterPresent>     
+   		<iterate prepend="and" property="Criteria.criteriaWithoutValue" conjunction="and" >
+          $Criteria.criteriaWithoutValue[]$
+        </iterate>
+        <iterate prepend="and" property="Criteria.criteriaWithSingleValue" conjunction="and" >
+          $Criteria.criteriaWithSingleValue[].condition$
+            #Criteria.criteriaWithSingleValue[].value#
+        </iterate>
+        <iterate prepend="and" property="Criteria.criteriaWithExistsValue" conjunction="and" >
+           	 $Criteria.criteriaWithExistsValue[].condition$
+           	 ($Criteria.criteriaWithExistsValue[].value$)
+        </iterate>
+        <iterate prepend="and" property="Criteria.criteriaWithListValue" conjunction="and" >
+          $Criteria.criteriaWithListValue[].condition$
+          <iterate property="Criteria.criteriaWithListValue[].values" open="(" close=")" conjunction="," >
+            #Criteria.criteriaWithListValue[].values[]#
+          </iterate>
+        </iterate>
+        <iterate prepend="and" property="Criteria.criteriaWithBetweenValue" conjunction="and" >
+          $Criteria.criteriaWithBetweenValue[].condition$
+          #Criteria.criteriaWithBetweenValue[].values[0]# and
+          #Criteria.criteriaWithBetweenValue[].values[1]#
+        </iterate>  
+     </isParameterPresent>
+</sql> 
+
+<sql id="orderlimit">     
+   order by $pager.sort$ $pager.dir$ 
+</sql> 
+
+
+<typeAlias alias="iCriteria" type="com.huateng.ibatis.util.vo.IbatisCeteria" />
+
+<cacheModel id="model-cache" type="OSCACHE">
+	<flushInterval seconds="180" />
+</cacheModel>
+<select id="count_temp" resultClass="java.lang.Long" parameterClass="iCriteria" cacheModel="model-cache" >
+	select count(1) 
+	<include refid="Criterialimit"/>
+</select>	
+
+<select id="pager_temp" resultClass="java.lang.Integer" parameterClass="iCriteria" cacheModel="model-cache">
+	<include refid="pagestart"/>	
+	select count(1)  
+	<include refid="Criterialimit_pagesend"/>
+
+</select>
+
+				
+</sqlMap>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:ehcache="http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring" 
+	xsi:schemaLocation="
+            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd 
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+            http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring 
+            http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.1.xsd">
+	<!-- ============================================================= -->
+	<!--  配置调用方法执行时间的拦截器
+		<bean id="performanceMonitor" 
+	           class="org.springframework.aop.interceptor.PerformanceMonitorInterceptor" />
+		<aop:pointcut id="allServiceMethods" expression="execution(* *..*service.*.*(..))"/> 
+		<aop:advisor pointcut-ref="allServiceMethods" advice-ref="performanceMonitor"/> 
+	 -->
+ 
+    <!-- 				AOP transaction definition					   -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager" >
+		<tx:attributes>
+ 			<tx:method name="*" propagation="REQUIRED" rollback-for="java.lang.Exception" isolation="DEFAULT"/>
+ 			<tx:method name="getNext*" propagation="REQUIRES_NEW" rollback-for="java.lang.Exception" isolation="DEFAULT"/>
+		</tx:attributes>
+	</tx:advice>
+	<!-- ============================================================= -->
+	<!-- 						aspect bean def 					   -->
+	<aop:config>
+		<aop:pointcut id="doPointCut" expression="execution(* *..*ServiceImpl.*(..))"/>
+		<aop:pointcut id="getNextPointCut" expression="execution(* *..SeqPoolNumSysParam.getNext(..))"/>
+		 
+		<aop:advisor advice-ref="txAdvice" order="2" pointcut-ref="doPointCut"/>
+		<aop:advisor advice-ref="txAdvice" order="2" pointcut-ref="getNextPointCut"/>
+		
+	</aop:config>
+	<!-- ============================================================= -->
+ 	 
+ 	 <!-- txn file process -->
+ 	 <bean id="txnSaleFileProcessor" class="com.light.project.szafc.file.TxnFileProcessor">
+ 	 	<property name="dataSrcFactory" ref="txnSaleFileDataSrcFactory"></property>
+ 	 	<property name="fileHandlerFactory" ref="txnSaleFileHandlerFactory"></property>
+ 	 	<property name="fileInformHandler" ref="fileInformSendHandler"></property>
+ 	 </bean>
+ 	 
+ 	 <bean id="txnSaleFileHandlerFactory" class="com.light.project.szafc.file.TxnSaleFileHandlerFactory"/>
+ 	 
+ 	 <bean id="txnSaleFileDataSrcFactory" class="com.light.project.szafc.file.TxnSaleFileDataSrcFactory">
+ 	 	<property name="orderInfoService" ref="orderInfoServiceImpl"></property>
+ 	 </bean>
+ 	 <!-- txn file process end-->
+ 	 
+ 	 
+ 	 <bean id="fileInformSendHandler" class="com.light.project.szafc.file.FileInformHandler">
+ 	 	<property name="fileProcHandler" ref="fileProcInfoServiceImpl"></property>
+ 	 	
+ 	 	<property name="transferFtpClient" ref="transferFtpClient"></property>
+ 	 	<property name="transferRemotePath" value="."></property>
+ 	 	 
+ 	 </bean>
+ 	 
+ 	 <bean id="fileProcInfoServiceImpl" class="com.light.project.szafc.business.file.service.FileProcInfoServiceImpl">
+ 	 	<property name="dao" ref="fileProcInfoDaoImpl"></property>
+ 	 </bean>
+ 	 
+ 	 <bean id="orderInfoServiceImpl" class="com.light.project.szafc.business.order.service.OrderInfoServiceImpl">
+ 	 	<property name="orderInfoDao" ref="orderInfoDaoImpl"></property>
+ 	 </bean>
+ 	 
+ 	 
+ 	 <bean id="springContextHolder" class="com.light.common.tools.spring.SpringContextHolder"/>
+ 	 
+ 	 <bean id="globalCtxFactoryBean" class="com.light.project.szafc.common.ctxdata.ComboCtxFactory">
+ 	 	<property name="accessorList">
+ 	 		<list>
+ 	 			<bean class="com.light.project.szafc.common.ctxdata.SeqCtxAccessor">
+ 	 				<property name="dataStore">
+ 	 					<map>
+ 	 						<entry key="seq.session" value-ref="sessionSeqPoolNumSysParam"/>
+ 	 						<entry key="seq.outfile" value-ref="fileSeqPoolNumSysParam"/>
+ 	 					</map>
+ 	 				</property>
+ 	 			</bean>
+ 	 			<bean class="com.light.project.szafc.common.ctxdata.SysparamCtxAccessor">
+ 	 				<property name="syService" ref="sunrayTools.sysParameterService">
+ 	 				</property>
+ 	 			</bean>
+ 	 		</list>
+ 	 	</property>
+ 	 	
+ 	 </bean>
+ 	 
+ 	 <bean id="lineUpClientCenter" class="com.light.common.com.ClientCenter">
+ 	 	<property name="clientProcessor" ref="clientProcessor"></property>
+ 	 	<property name="keyExtractor"><bean class="com.light.project.szafc.message.tools.MessageQueKeyExtractor"/></property>
+ 	 	<property name="ip" value="${com.upper.client.ip}" ></property>
+ 	 	<property name="port" value="${com.upper.client.port}" ></property>
+ 	 </bean>
+ 	 
+ 	 
+ 	 
+ 	 <bean id="sunrayTools.sysParameterService" class="com.huateng.bussiness.sysparameter.service.SysParameterServiceImpl">
+ 	 	<property name="dao" ref="sunrayTools.sysParameterDao"></property>
+ 	</bean>
+ 	
+ 	
+ 	<!-- 流水号生成 -->
+	<bean id ="sessionSeqPoolNumSysParam" class="com.light.project.szafc.common.seq.SeqPoolNumSysParam">
+		<constructor-arg index="0" value="seq.session" />
+		<constructor-arg index="1" value="1" />
+		<constructor-arg index="2" value="99999999" />
+		<constructor-arg index="3" value="0" />
+		<property name="syService" ref="sunrayTools.sysParameterService" />
+   </bean>
+   
+   <bean id ="fileSeqPoolNumSysParam" class="com.light.project.szafc.common.seq.SeqPoolNumSysParam">
+		<constructor-arg index="0" value="seq.outfile" />
+		<constructor-arg index="1" value="1" />
+		<constructor-arg index="2" value="99999" />
+		<constructor-arg index="3" value="0" />
+		<property name="syService" ref="sunrayTools.sysParameterService" />
+   </bean>
+   
+   <bean id ="CCHSFtpClient" class="com.light.common.ftp.DefaultFtpClient">
+		<property name="host" value="${com.ftp.cchs.ip}"></property>
+		<property name="port" value="${com.ftp.cchs.port}"></property>
+		<property name="user" value="${com.ftp.cchs.user}"></property>
+		<property name="pwd" value="${com.ftp.cchs.pwd}"></property>
+   </bean>
+   
+   <bean id ="transferFtpClient" class="com.light.common.ftp.DefaultFtpClient">
+		<property name="host" value="${com.ftp.transfer.ip}"></property>
+		<property name="port" value="${com.ftp.transfer.port}"></property>
+		<property name="user" value="${com.ftp.transfer.user}"></property>
+		<property name="pwd" value="${com.ftp.transfer.pwd}"></property>
+   </bean>
+   
+   
+   <!-- message process -->
+   <bean id ="cchsReqProcessor" class="com.light.project.szafc.message.ClientReqProcessor">
+		<property name="handlerMap">
+			<map>
+				<entry key="9000" value-ref="fileInformReqMessageHandler"/>
+			</map>
+		</property>
+		
+   </bean>
+   
+   <bean id ="fileInformReqMessageHandler" class="com.light.project.szafc.message.FileInformHandler">
+		<property name="handlerMap">
+			<map>
+				<entry key="06" value-ref="ftpAuditHandler"/>
+			</map>
+		</property>
+		<property name="pathMap">
+			<map>
+				<entry key="06" value="${com.ftp.path.fileaudit}"/>
+			</map>
+		</property>
+		<property name="ftpClient" ref="CCHSFtpClient">
+		</property>
+		
+   </bean>
+   
+   <bean id ="ftpAuditHandler" class="com.light.project.szafc.file.FtpAuditHandler">
+		<property name="fileProcInfoHandler" ref="fileProcInfoServiceImpl"></property>
+   </bean>
+   <!-- message process end-->
+   
+   
+   <!-- file wind up -->
+   <bean id ="fileWindUp" class="com.light.project.szafc.file.FileWindUp">
+		<property name="fileProcHandler" ref="fileProcInfoServiceImpl"></property>
+		<property name="fileInformHandler" ref="fileInformSendHandler"></property>
+   </bean>
+	<!-- file wind up end-->
+</beans>

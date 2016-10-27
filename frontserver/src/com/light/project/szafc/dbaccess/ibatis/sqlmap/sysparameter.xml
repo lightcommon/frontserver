@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap      
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"      
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+    
+<sqlMap namespace="sysparameter">
+
+	<typeAlias alias="iCriteria" type="com.huateng.ibatis.util.vo.IbatisCeteria" />
+	<typeAlias alias="sysParameterVo" type="com.huateng.bussiness.sysparameter.entity.SysParameterVo" />
+	
+	<!-- 查询缓存配置 -->
+	<cacheModel id="cache-sysParam" type="LRU">
+		<flushInterval seconds="600" />
+	</cacheModel>
+	
+	
+	<!-- 添加系统参数 -->
+	<insert id="insert_sys_parameter" parameterClass="sysParameterVo">
+		insert into sys_parameter
+			  (PARAM_CATEGORY_ID, PARAM_ID, PARAM_STAT, PARAM_NAME, 
+			  PARAM_DESC, PARAM_VAL, LAST_MODITY_TIME, LAST_MODITY_USER)
+			values
+			  (#paramCategoryId#, #paramId#, #paramStat#, #paramName#, 
+			  #paramDesc#, #paramVal#, #lastModifyTime#, #lastModifyUser#)
+	</insert>
+	
+	<!-- 删除系统基础参数 -->
+	<delete id="delete_param" parameterClass="sysParameterVo">
+		delete from sys_parameter where param_id = #paramId# and param_category_id = #paramCategoryId#
+	</delete>
+	
+	<!-- 流水类参数递增 -->
+	<update id="update_param_value_serino" parameterClass="sysParameterVo">
+		update sys_parameter set param_val = param_val + 1 where param_id = #paramId# and param_category_id = #paramCategoryId#
+	</update>
+	
+	<!-- 修改系统基础参数 -->
+	<update id="update_param" parameterClass="sysParameterVo">
+		update sys_parameter
+	 		<dynamic prepend="set">
+				<isNotNull prepend="," property="paramStat">
+				  	 param_stat = #paramStat#
+		    	</isNotNull>
+		    	<isNotNull prepend="," property="paramName">
+				  	 param_name = #paramName#
+		    	</isNotNull>
+		   		<isNotNull prepend="," property="paramDesc">
+				  	 param_desc = #paramDesc#
+		    	</isNotNull>
+		    	<isNotNull prepend="," property="paramVal">
+				  	 param_val = #paramVal#
+		    	</isNotNull>
+		    	<isNotNull prepend="," property="lastModifyTime">
+				  	 last_modity_time = #lastModifyTime#
+		    	</isNotNull>
+		    	<isNotNull prepend="," property="lastModifyUser">
+				  	 last_modity_user = #lastModifyUser#
+		    	</isNotNull>
+			</dynamic>
+		where param_id = #paramId#  
+				<isNotNull prepend="and" property="paramCategoryId">
+				  	 param_category_id = #paramCategoryId#
+		    	</isNotNull>
+	</update>
+	
+
+
+	
+	<!-- 查询系统参数 页面查询使用 -->
+	<select id="select_param" parameterClass="iCriteria" resultClass="sysParameterVo">
+	select *
+	  from (select a.param_category_id as paramCategoryId,
+	               a.param_id          as paramId,
+	               a.param_stat        as paramStat,
+	               a.param_name        as paramName,
+	               a.param_desc        as paramDesc,
+	               a.param_val         as paramVal,
+	               a.last_modity_time  as lastModifyTime,
+	               a.last_modity_user  as lastModifyUser,
+	               u.username          as lastModifyUser_zh
+	          from sys_parameter a, tbl_user u
+	         where a.last_modity_user = u.userid(+)
+	         order by a.param_val)
+	 where 1 = 1
+	</select>
+	
+	
+	<!-- dl根据组参数ID和参数ID查询 -->
+	<select id="select_sys_parameterByGroupIdAndId" parameterClass="sysParameterVo" resultClass="sysParameterVo">
+		select param_category_id as paramCategoryId, param_id as paramId, 
+			param_stat as paramStat, param_name as paramName, param_desc as paramDesc, 
+			param_val as paramVal,last_modity_time as lastModifyTime, 
+			last_modity_user as lastModifyUser 
+		from sys_parameter 
+		where param_id = #paramId# 
+			<isNotNull prepend="and" property="paramCategoryId">
+			  	 param_category_id = #paramCategoryId#
+	    	</isNotNull>  
+	</select>
+	
+	
+	<!-- dl根据组参数ID和参数ID查询加锁 -->
+	<select id="select_sys_parameterByGroupIdAndIdLock" parameterClass="sysParameterVo" resultClass="sysParameterVo">
+		select param_category_id as paramCategoryId, param_id as paramId, 
+			param_stat as paramStat, param_name as paramName, param_desc as paramDesc, 
+			param_val as paramVal,last_modity_time as lastModifyTime, 
+			last_modity_user as lastModifyUser 
+		from sys_parameter 
+		where param_id = #paramId# 
+				<isNotNull prepend="and" property="paramCategoryId">
+				  	 param_category_id = #paramCategoryId#
+		    	</isNotNull> 
+		    	for update
+	</select>
+	
+	<!-- 根据参数类型和参数值查询 -->
+	<select id="select_sys_parameValue_categoryId" parameterClass="sysParameterVo" resultClass="sysParameterVo">
+		select param_category_id as paramCategoryId, param_id as paramId, 
+		param_stat as paramStat, param_name as paramName, param_desc as paramDesc, 
+		param_val as paramVal,last_modity_time as lastModifyTime, 
+		last_modity_user as lastModifyUser 
+		from sys_parameter 
+		where 1 = 1  
+		<isNotNull prepend="and" property="paramCategoryId">
+			param_category_id = #paramCategoryId#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramVal">
+			param_val = #paramVal#
+		</isNotNull> 
+	</select>
+	
+	<select id="select_sys_parameter_new" parameterClass="sysParameterVo" resultClass="sysParameterVo">
+		select param_category_id as paramCategoryId,
+		       param_id          as paramId,
+		       param_stat        as paramStat,
+		       param_name        as paramName,
+		       param_desc        as paramDesc,
+		       param_val         as paramVal,
+		       last_modity_time  as lastModifyTime,
+		       last_modity_user  as lastModifyUser
+		  from sys_parameter
+		 where 1 = 1
+		<isNotNull prepend="and" property="paramCategoryId">
+			param_category_id = #paramCategoryId#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramId">
+			param_id = #paramId#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramName">
+			param_name = #paramName#
+		</isNotNull>	
+		<isNotNull prepend="and" property="paramVal">
+			param_val = #paramVal#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramStat">
+			param_stat = #paramStat#
+		</isNotNull>
+		<isNotEmpty prepend="AND" property="paramDesc" >
+			param_desc = #paramDesc#
+		</isNotEmpty>						 
+	</select>
+	
+	<!-- 根据组参数ID和参数ID查询 使用缓存 -->
+	<select id="selectid_new_use_cache" parameterClass="sysParameterVo" resultClass="sysParameterVo"  cacheModel="cache-sysParam">
+		select param_category_id as paramCategoryId, param_id as paramId, 
+		param_stat as paramStat, param_name as paramName, param_desc as paramDesc, 
+		param_val as paramVal,last_modity_time as lastModifyTime, 
+		last_modity_user as lastModifyUser 
+		from sys_parameter 
+		where 1 = 1  
+		<isNotNull prepend="and" property="paramCategoryId">
+			param_category_id = #paramCategoryId#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramId">
+			param_id = #paramId#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramName">
+			param_name = #paramName#
+		</isNotNull>	
+		<isNotNull prepend="and" property="paramVal">
+			param_val = #paramVal#
+		</isNotNull>
+		<isNotNull prepend="and" property="paramStat">
+			param_stat = #paramStat#
+		</isNotNull>			
+	</select>
+	
+	<!-- 查询校验类型与卡状态关联参数 -->
+	<select id="findSysParamDescByTxnType" parameterClass="sysParameterVo" resultClass="java.lang.Object">
+		select count(*) from sys_parameter t where 
+			t.param_category_id = #paramCategoryId#  
+			and t.param_val = #paramVal# 
+			and t.param_desc like '%'||#paramDesc#||'%'
+	</select>
+	
+</sqlMap>

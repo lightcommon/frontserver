@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+	  <!-- This makes it possible to specify java.net.SocketAddress values 
+    (e.g. :1234 below) as Strings.
+    They will be converted into java.net.InetSocketAddress objects by Spring.  -->
+  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+    <property name="customEditors">
+      <map>
+        <entry key="java.net.SocketAddress">
+          <bean class="org.apache.mina.integration.beans.InetSocketAddressEditor" />
+        </entry>
+      </map>
+    </property>
+  </bean>
+  
+  
+  <!-- 线程池过滤器，提供高性能的并发处理 -->
+  <bean id="executorFilter" class="org.apache.mina.filter.executor.ExecutorFilter">
+   <constructor-arg>
+      <bean class="org.apache.mina.filter.executor.OrderedThreadPoolExecutor" >
+	  	<property name="maximumPoolSize" value="${mina.threadpool.maxnum}"/>
+  	  	<property name="corePoolSize" value="${mina.threadpool.minnum}"/>
+    </bean>
+    </constructor-arg>
+  </bean>
+  
+  
+  <!-- 报文处理协议过滤器-->
+  <bean id="headPadLenCommPackProc" class="com.lightcomm.comm.common.filter.protocolcodec.comm.HeadPadLenCommPackProc">
+		<property name="lenFieldType">
+			<value>Bi</value>
+		</property>
+		<property name="lenFieldLen">
+			<value>2</value>
+		</property>
+		<property name="includeLenField">
+			<value>false</value>
+		</property>
+		<!-- 
+		<property name="lenFieldPos">
+			<value>2</value>
+		</property>
+		<property name="includeHeadField">
+			<value>false</value>
+		</property>
+		
+		<property name="lengthOffset">
+			<value>6</value>
+		</property>
+		 -->
+  </bean>
+  
+   
+  <!-- head body app object processor  --> 
+  <bean id="headBodyPackProcessor" class="com.lightcomm.comm.common.filter.protocolcodec.app.HeadBodyPackProcessor">
+	<property name="mapperConf"><value>szafcmapper.xml</value></property>
+<!-- 	
+	<property name="mapperNamespace"><value>my</value></property>
+ -->
+ 	<property name="typeExtractor"><bean class="com.light.project.szafc.message.tools.MessageTypeExtractor"/></property>
+  </bean>
+
+  <bean id="packageSecurityProcessor" class="com.light.project.szafc.message.PackageSecurityProcessor"></bean>
+  
+  <bean id="packageDecoder" class="com.lightcomm.comm.common.filter.protocolcodec.PackageDecoder">
+		
+		<property name="packageSecurityProcessor" ref="packageSecurityProcessor"/>
+		
+		<property name="commPackageProcessor" ref="headPadLenCommPackProc"/>
+		
+		<property name="objMsgProcessor" ref="headBodyPackProcessor"/>
+		
+  </bean>
+  
+  <bean id="packageEncoder" class="com.lightcomm.comm.common.filter.protocolcodec.PackageEncoder">
+		
+		<property name="packageSecurityProcessor" ref="packageSecurityProcessor"/>
+		
+		<property name="commPackageProcessor" ref="headPadLenCommPackProc"/>
+		
+		<property name="objMsgProcessor" ref="headBodyPackProcessor"/>
+		
+  </bean>
+  
+  
+  
+  <bean id="packageCodecFilter" class="org.apache.mina.filter.codec.ProtocolCodecFilter">
+    <constructor-arg>
+      <bean class="com.lightcomm.comm.common.filter.protocolcodec.PackageCodecFactory">
+      	
+      	<constructor-arg ref="packageDecoder"/>
+		
+		<constructor-arg ref="packageEncoder"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+  <!-- package codec end -->
+  
+	 <bean id="mdcInjectionFilter"
+	  		class="org.apache.mina.filter.logging.MdcInjectionFilter">
+	</bean> 
+	
+	<!-- 日志过滤器，提供往来报文长度和报文内容打印，此过滤器应配置在成帧过滤器之后 -->
+	<bean id="packLogFilter"
+	   class="com.lightcomm.comm.common.filter.logging.PackLogFilter">
+	   <property name="messGetter">
+			<bean class="com.lightcomm.comm.common.filter.logging.LogMessGetterImpl">
+				<!-- 指定报文内容输出类型，"HEX"-十六进制字符串方式输出报文内容, "STR"-直接以字符串方式输出报文内容 -->
+				<property name="outMessType" value="HEX"/>
+			</bean>
+	   </property>
+	</bean> 
+	 	
+	 	<!-- keepalive过滤器，建议配置于成帧过滤器后，以便于心跳包的组包工作 ，连接超时后可实现自己的KeepAliveRequestTimeoutHandler接口，默认超时实现为断开连接-->
+	<bean id="keepAliveFilter"
+	  		class="com.lightcomm.comm.common.filter.connectmaintain.keepalive.KeepAliveFilter">
+	  		<!-- keepalive 消息工厂，应该用实际应用协议所对应的keepalive消息工厂代替 -->
+	  	<constructor-arg>
+			<bean class="com.light.project.szafc.message.keepalive.PingCommMessageFactory">
+				<property name="destNodeId" value="00000100"></property>
+			</bean>
+		</constructor-arg>
+		<!-- 首次进行链路IDLE处理的IDLE时间间隔 -->
+		<property name="requestInterval" value="2000"></property>
+		<!-- 链路探测包重复发送的IDLE间隔 -->
+		<property name="requestTimeout" value="5000"></property>
+		<!-- 链路探测包在无响应情况下重复发送次数，为0时，代表链路IDLE后直接进行链路IDLE处理，为1代表只发送一次 链路探测包-->
+		<property name="resendTimes" value="2"></property>
+	</bean> 
+  
+  <!-- 配置filter链，示例以全过滤器链为例，使用时可根据实际需要删减-->
+  <bean id="filterChainBuilder" class="org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder">
+    <property name="filters">
+		<map>
+		
+            <entry key="executor" value-ref="executorFilter"/>
+         
+            <entry key="mdc" value-ref="mdcInjectionFilter"/>
+			
+			<entry key="codec" value-ref="packageCodecFilter"/>
+			
+            <entry key="logging" value-ref="packLogFilter"/>
+            
+            <entry key="keepAlive" value-ref="keepAliveFilter"></entry>
+              
+		</map>
+    </property>
+  </bean>
+  
+  
+  
+   <!-- new com clinet -->
+  <bean id="ioConnector" class="org.apache.mina.transport.socket.nio.NioSocketConnector">
+    <property name="handler" ref="clientHandler" />
+    <property name="filterChainBuilder" ref="filterChainBuilder" />
+  </bean>
+
+  <bean id="clientProcessor" class="com.lightcomm.comm.server.client.ClientProcessor">
+  	<constructor-arg>
+		<value>false</value>
+	</constructor-arg>
+  	<property name="connector" ref="ioConnector"></property>
+  	<property name="comConfig">
+  		<map>
+            <entry key="test" value="true"/>
+		</map>
+  	</property>
+  	
+  </bean>
+  
+    <!-- 
+ 
+  <bean id="clientProcessor" class="com.light.project.szafc.message.ClientProcessor">
+  	<constructor-arg>
+		<value>false</value>
+	</constructor-arg>
+  	<property name="connector" ref="ioConnector"></property>
+  	<property name="comConfig">
+  		<map>
+            <entry key="test" value="true"/>
+		</map>
+  	</property>
+  	
+  </bean>
+     -->
+
+  
+  
+  
+  <bean id="clientHandler" class="com.lightcomm.comm.server.client.ComClientHandler">
+		<property name="clientProcessor" ref="clientProcessor"></property>  
+  </bean>
+  
+     <!-- 
+  <bean id="clientHandler" class="com.light.project.szafc.message.ComClientHandler">
+		<property name="clientProcessor" ref="clientProcessor"></property>  
+  </bean>
+    -->
+  
+  <!-- new com clinet -->
+  
+  
+</beans>

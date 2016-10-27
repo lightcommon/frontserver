@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BOMapConfig
+xmlns="http://www.huateng.com"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.huateng.com bomap.xsd">
+<!---->
+<bomap namespace="default" >
+<mapper id="head" class="com.light.project.szafc.common.entity.message.MessageHead" type="all">
+	<field property="messageType"		codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="2" paddata="0x00" padpos="L"/>
+	<field property="senderId" 			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4" paddata="0x00" padpos="l"/>
+	<field property="receiverId" 		codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4" paddata="0x00" padpos="l"/>
+	<field property="sessionId" 		codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4" paddata="0x00" padpos="l"/>
+	<field property="reqFlag" 			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="1" paddata="0x00" padpos="l"/>
+	<field property="repCode" 			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="1" paddata="0x00" padpos="l"/>
+</mapper>
+
+<mapper id="9000q" class="com.light.project.szafc.common.entity.message.FileInformMessage" type="all">
+	<field property="startTime"			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="7"/>
+	<field property="senderId"			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4"/>
+	<field property="fileType"			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="1"/>
+	<field property="fileName"			codec="com.light.bomap.common.codec.impl.value.ValueAscii2StringCodecImpl" width="32" paddata="0x00" padpos="r"/>
+	<field property="MD5Sum"			codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="16"/>
+</mapper>
+
+<mapper id="2001q" class="com.light.project.szafc.common.entity.message.PingMessage" type="all">
+	<field property="receiverId"		codec="com.light.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4"/>
+</mapper>
+
+<!-- 
+<mapper id="3102" class="com.light.messageframework.hfafc.entity.busimode.StationModeBroadcast" type="all">
+	<field property="currTime"			codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="7"/>
+	<field property="loopCount"			codec="com.huateng.bomap.common.codec.impl.value.ValueByte2UnsignedIntCodecImpl" width="1"/>
+	<list count="loopCount"  class="com.light.messageframework.hfafc.entity.busimode.StationModeInfo"  property ="stationModes"  >
+       	<field property="stationeId"			codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4"/>
+		<field property="modeCode"				codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="1"/>
+		<field property="modeStartTime"			codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="7"/>
+		<field property="modeEndTime"			codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="7"/>
+	</list>
+</mapper>
+ -->
+<!--
+<mapper id="testbody" class="example.entity.TestBody" type="all">
+	<field property="txnAmt" codec="com.huateng.bomap.common.codec.impl.value.ValueAscii2IntLeftFillCodecImpl" width="4" />
+	<field property="dataInfo" codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4"/>
+</mapper>
+<mapper id="testreply" class="example.entity.TestBody" type="all">
+	<field property="txnAmt" codec="com.huateng.bomap.common.codec.impl.value.ValueAscii2IntLeftFillCodecImpl" width="4" />
+	<field property="dataInfo" codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="4"/>
+	<field property="repCode" codec="com.huateng.bomap.common.codec.impl.value.ValueByte2HexStringCodecImpl" width="2"/>
+</mapper>
+-->
+
+</bomap>
+</BOMapConfig>

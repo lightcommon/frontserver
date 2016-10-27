@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd"> 	 
+
+	<bean id="taskTxnSaleFileReport"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="txnSaleFileProcessor" />
+		</property>
+		<property name="targetMethod">
+			<value>doBusi</value>
+		</property>
+		<property name="concurrent" value="false" />
+	</bean>
+	
+	<bean id="tasklienUpClient"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="lineUpClientCenter" />
+		</property>
+		<property name="targetMethod">
+			<value>doBusi</value>
+		</property>
+		<property name="concurrent" value="true" />
+	</bean>
+	
+	<bean id="taskCCHSReqMessage"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="cchsReqProcessor" />
+		</property>
+		<property name="targetMethod">
+			<value>doBusi</value>
+		</property>
+		<property name="concurrent" value="true" />
+	</bean>
+	
+	<bean id="taskFileWindUp"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="fileWindUp" />
+		</property>
+		<property name="targetMethod">
+			<value>doBusi</value>
+		</property>
+		<property name="concurrent" value="false" />
+	</bean>
+	
+	
+	<bean id="cronTriggerTxnSaleFileReport"
+		class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="taskTxnSaleFileReport" />
+		<property name="cronExpression">
+			<value>${Timer.cronTrigger.txn.file.report}</value>
+		</property>
+	</bean>
+	
+	<bean id="cronTriggerlienUpClient"
+		class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="tasklienUpClient" />
+		<property name="cronExpression">
+			<value>${Timer.cronTrigger.com.lineup}</value>
+		</property>
+	</bean>	
+	
+	<!-- cchs request message processor -->
+	<bean id="cronTriggerCCHSReqMessage"
+		class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="taskCCHSReqMessage" />
+		<property name="cronExpression">
+			<value>${Timer.cronTrigger.message.cchs.req}</value>
+		</property>
+	</bean>
+	<!-- cchs request message processor end-->
+	
+	
+	<bean id="cronTriggerFileWindUp"
+		class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="taskFileWindUp" />
+		<property name="cronExpression">
+			<value>${Timer.cronTrigger.file.windup}</value>
+		</property>
+	</bean>
+	
+	<!-- 批处理任务管理器 -->
+	<bean id="triggerManager" lazy-init="false" autowire="no"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+			<!-- 
+				<ref bean="cronTriggerTxnSaleFileReport" />
+			  -->
+			   
+				<ref bean="cronTriggerlienUpClient" />
+			 <!--
+			 	<ref bean="cronTriggerCCHSReqMessage" />
+			   -->
+			 	<!--
+			 	<ref bean="cronTriggerFileWindUp"/>
+			 	 -->
+			</list>
+		</property>
+	</bean>
+	
+</beans>

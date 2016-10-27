@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap      
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"      
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+    
+<sqlMap namespace="businessinfo">
+	
+	<typeAlias alias="dataPrepareParam" type="com.light.project.szafc.common.entity.file.DataPrepareParam"/>
+	
+	<insert id="order_info_detail_prepare" parameterClass="dataPrepareParam">
+
+	insert into orders_details_proc
+		(proc_session_id,
+		id,
+		order_no,
+		create_time,
+		operate_type,
+		count,
+		failure_time,
+		station,
+		station_name,
+		equipment_id,
+		modecode,
+		operatorid,
+		businessday,
+		tickInfo)
+		select #procSessionId#,
+		id,
+		order_no,
+		create_time,
+		operate_type,
+		count,
+		failure_time,
+		station,
+		station_name,
+		equipment_id,
+		modecode,
+		operatorid,
+		businessday,
+		tickInfo
+		from orders_details_tmp where id > #startSeq# and operate_type = 2
+	</insert>
+	
+	<select id="order_info_detail_toproc" parameterClass="iCriteria" resultClass="orderDetail">
+		select proc_session_id as procSessionId,
+			   id as recId,
+			   order_no as orderNo,
+			   create_time as createTime,
+			   count as count,
+			   station as station,
+			   station_name as stationName,
+			   equipment_id as equipmentId,
+			   modecode as modeCode,
+			   operatorid as operationId,
+		       businessday as businessDay,
+			   tickInfo as tickInfoStr
+		from orders_details_proc where 1=1
+	</select>
+	
+	<!-- 修改卡的基础信息 -->
+	<update id="order_info_detail_toproc_update" parameterClass="OrderDetail">
+		update orders_details_proc
+		set
+		last_time = date_format(now(),'%Y%m%d%H%i%s')
+		<isNotNull prepend="," property="refResourceId">
+			ref_resource_id =
+			#refResourceId#
+		</isNotNull>
+			
+		
+		where proc_session_id = #procSessionId# and id = #recId#
+	</update>
+	
+</sqlMap>

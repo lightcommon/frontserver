@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+	<!-- Transaction manager -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- Spring提供的iBatis的SqlMap配置 -->
+	<bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configLocation" value="classpath:sqlMapConfig.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- ibatis扩展工具的配置 -->
+	<bean id="extendClient" class="com.huateng.ibatis.util.ExtendClient">
+		<property name="client" ref="sqlMapClient" />
+		<property name="countmapmentid" value="template.count_temp" />
+		<property name="groupmapmentid" value="template.pager_temp" />
+	</bean>
+
+	<!-- dao配置 -->
+	<bean id="orderInfoDaoImpl" class="com.light.project.szafc.business.order.dao.OrderInfoDaoImpl">
+		<property name="extendClient" ref="extendClient"></property>
+	</bean>
+	
+	<bean id="fileProcInfoDaoImpl" class="com.light.project.szafc.business.file.dao.FileProcInfoDaoImpl">
+		<property name="extendClient" ref="extendClient"></property>
+	</bean>
+	<!-- dao配置 end-->
+	
+	
+	<bean id="sunrayTools.sysParameterDao" class=" com.huateng.bussiness.sysparameter.dao.SysParameterDaoImpl">
+		<property name="extendClient" ref="extendClient" />
+	</bean>
+	
+</beans>

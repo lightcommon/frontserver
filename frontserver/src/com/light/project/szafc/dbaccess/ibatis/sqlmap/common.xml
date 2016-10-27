@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap      
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"      
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+    
+<sqlMap namespace="common">
+	
+	<typeAlias alias="fileProcInfo" type="com.light.project.szafc.business.file.entity.FileProcInfo"/>
+	<typeAlias alias="iCriteria" type="com.huateng.ibatis.util.vo.IbatisCeteria" />
+	<typeAlias alias="orderDetail" type="com.light.project.szafc.business.order.entity.OrderDetail" />
+	
+	
+	<insert id="file_info_proc_insert" parameterClass="fileProcInfo">
+
+	insert into file_proc_info
+		(businessday, file_name,file_busi_code,file_proc_time,file_proc_status,file_type,
+		file_curr_path,file_ext_rep,file_ext_dest, file_digest, last_time)
+		values
+		(
+		#businessday#,
+		#fileName#,
+		#fileBusiCode#,
+		#fileProcTime#,
+		#fileProcStatus#,
+		#fileType#,
+		#fileCurrPath#,
+		#fileExtRep#,
+		#fileExtDest#,
+		#fileDigest#,
+		#lastTime#)
+	</insert>
+	
+	<update id="file_info_proc_update" parameterClass="fileProcInfo">
+		update file_proc_info 
+			set file_proc_status = #fileProcStatus#
+			<isNotNull prepend="," property="fileProcTimes">
+				file_proc_times = file_proc_times + 1
+			</isNotNull>
+			<isNotNull prepend="," property="fileCurrPath">
+				file_curr_path = #fileCurrPath#
+			</isNotNull>
+			where file_name = #fileName# and file_busi_code = #fileBusiCode#
+	</update>
+	
+	<select id="file_info_proc_select" parameterClass="iCriteria" resultClass="fileProcInfo">
+		select businessday as businessday,
+			   file_name as fileName,
+			   file_busi_code as fileBusiCode,
+			   file_proc_time as fileProcTime,
+			   file_proc_status as fileProcStatus,
+			   file_type as fileType,
+			   file_curr_path as fileCurrPath,
+			   file_ext_rep as fileExtRep,
+			   file_ext_dest as fileExtDest,
+			   file_proc_times as fileProcTimes,
+			   file_digest as fileDigest,
+			   last_time as lastTime
+		from orders_details_proc where 1=1
+	</select>
+	
+</sqlMap>
